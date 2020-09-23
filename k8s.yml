@@ -1,0 +1,94 @@
+---
+- hosts: all
+
+  tasks:
+    - name: Download kubeadm, kubectl, kubelet
+      get_url:
+        url: https://storage.googleapis.com/kubernetes-release/release/v1.19.0/bin/linux/amd64/{{ binary }}
+        dest: /usr/local/bin
+        mode: 0755
+      loop_control:
+        loop_var: binary
+      loop:
+        - kubeadm
+        - kubectl
+        - kubelet
+      become: yes
+
+    - name: docker key
+      apt_key:
+        url: https://download.docker.com/linux/debian/gpg
+      become: yes
+
+    - name: docker repo
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/debian buster stable
+      become: yes
+
+    - name: docker install
+      package:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+      become: yes
+
+    - name: docker config
+      copy:
+        src: docker-daemon.json
+        dest: /etc/docker/daemon.json
+      notify: docker-restart
+      become: yes
+
+    - name: reqs
+      package:
+        name:
+          - conntrack
+          - ethtool
+          - socat
+      become: yes
+
+    - name: defaults dir
+      file:
+        path: /etc/defaults
+        state: directory
+      become: yes
+
+    - name: kubelet defaults
+      copy:
+        src: kubelet-defaults
+        dest: /etc/defaults/kubelet
+      become: yes
+
+    - name: service dir
+      file:
+        path: /usr/lib/systemd/system/
+        state: directory
+      become: yes
+
+    - name: kubelet service
+      copy:
+        src: kubelet.service
+        dest: /usr/lib/systemd/system/kubelet.service
+      become: yes
+
+    - name: enable kubelet
+      systemd:
+        daemon_reload: true
+        name: kubelet
+        enabled: true
+      become: yes
+
+  handlers:
+    - name: kubelet-restart
+      systemd:
+        name: kubelet
+        state: restarted
+      become: yes
+
+    - name: docker-restart
+      systemd:
+        name: docker
+        state: restarted
+      become: yes
+...
