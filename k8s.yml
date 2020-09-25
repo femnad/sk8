@@ -57,7 +57,7 @@
     - name: kubelet defaults
       copy:
         src: kubelet-defaults
-        dest: /etc/defaults/kubelet
+        dest: /etc/default/kubelet
       become: yes
 
     - name: service dir
@@ -84,6 +84,7 @@
       systemd:
         name: kubelet
         state: restarted
+        daemon_reload: true
       become: yes
 
     - name: docker-restart

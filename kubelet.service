@@ -2,7 +2,8 @@
 Description=Kubelet service
 
 [Service]
-ExecStart=/usr/local/bin/kubelet
+EnvironmentFile=/etc/default/kubelet
+ExecStart=/usr/local/bin/kubelet $KUBELET_KUBECONFIG_ARGS $KUBELET_CONFIG_ARGS $KUBELET_KUBEADM_ARGS $KUBELET_EXTRA_ARGS
 
 [Install]
 WantedBy=multi-user.target
