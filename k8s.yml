@@ -1,5 +1,5 @@
 ---
-- hosts: all
+- hosts: k8s.fcd.dev
 
   tasks:
     - name: Download kubeadm, kubectl, kubelet
