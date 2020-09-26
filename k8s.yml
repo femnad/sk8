@@ -104,6 +104,18 @@
     - name: chezmoi apply
       command: '{{ ansible_user_dir }}/bin/chezmoi apply'
 
+    - name: purge config
+      file:
+        path: /etc/kubernetes
+        state: absent
+      become: yes
+
+    - name: stop kubelet
+      systemd:
+        name: kubelet
+        state: stopped
+      become: yes
+
   handlers:
     - name: kubelet-restart
       systemd:
