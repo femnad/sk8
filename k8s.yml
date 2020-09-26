@@ -45,7 +45,9 @@
         name:
           - conntrack
           - ethtool
+          - fish
           - socat
+          - tmux
       become: yes
 
     - name: defaults dir
@@ -78,6 +80,29 @@
         name: kubelet
         enabled: true
       become: yes
+
+    - name: user bin
+      file:
+        path: '{{ ansible_user_dir }}/bin'
+        state: directory
+
+    - name: chezmoi
+      unarchive:
+        src: https://github.com/twpayne/chezmoi/releases/download/v1.8.5/chezmoi_1.8.5_linux_amd64.tar.gz
+        dest: '{{ ansible_user_dir }}/bin'
+        mode: 0755
+        remote_src: true
+
+    - name: chezmoi init
+      command: '{{ ansible_user_dir }}/bin/chezmoi init https://gitlab.com/femnad/chezmoi.git'
+
+    - name: chezmoi pull
+      git:
+        repo: https://gitlab.com/femnad/chezmoi.git
+        dest: '{{ ansible_user_dir }}/.local/share/chezmoi'
+
+    - name: chezmoi apply
+      command: '{{ ansible_user_dir }}/bin/chezmoi apply'
 
   handlers:
     - name: kubelet-restart
