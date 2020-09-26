@@ -1,4 +1,12 @@
 ---
+- hosts: localhost
+  tasks:
+    - name: remove known host
+      known_hosts:
+        name: k8s.fcd.dev
+        state: absent
+      tags: redo
+
 - hosts: k8s.fcd.dev
 
   tasks:
