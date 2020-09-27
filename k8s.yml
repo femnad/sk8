@@ -70,17 +70,21 @@
         dest: /etc/default/kubelet
       become: yes
 
-    - name: service dir
-      file:
-        path: /usr/lib/systemd/system/
-        state: directory
-      become: yes
-
     - name: kubelet service
       copy:
         src: kubelet.service
-        dest: /usr/lib/systemd/system/kubelet.service
+        dest: /etc/systemd/system/kubelet.service
       become: yes
+
+    - name: kubelet drop-in dir
+      file:
+        path: /etc/systemd/system/kubelet.service.d/
+        state: directory
+
+    - name: kubelet drop-in
+      copy:
+        src: kubeadm.conf
+        dest: /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 
     - name: enable kubelet
       systemd:

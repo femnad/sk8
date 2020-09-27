@@ -1,9 +1,10 @@
 module "instance-module" {
-  source               = "femnad/instance-module/gcp"
-  version              = "0.7.1"
-  github_user          = "femnad"
-  project              = "foolproj"
-  ssh_user             = "femnad"
+  source      = "femnad/instance-module/gcp"
+  version     = "0.7.1"
+  github_user = "femnad"
+  image       = "ubuntu-minimal-2004-focal-v20200917"
+  project     = "foolproj"
+  ssh_user    = "femnad"
 }
 
 
