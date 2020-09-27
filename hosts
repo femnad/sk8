@@ -1,2 +1,9 @@
 [k8s]
-k8s.fcd.dev
+cpn.fcd.dev
+node.fcd.dev
+
+[cpn]
+cpn.fcd.dev
+
+[nod]
+node.fcd.dev

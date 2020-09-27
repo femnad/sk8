@@ -1,13 +1,23 @@
 ---
 - hosts: localhost
   tasks:
-    - name: remove known host
+    - name: remove known hosts
       known_hosts:
-        name: k8s.fcd.dev
+        name: '{{ host }}.fcd.dev'
         state: absent
+      loop: [cpn, node]
+      loop_control:
+        loop_var: host
       tags: redo
 
-- hosts: k8s.fcd.dev
+    - name: add known hosts
+      shell: ssh-keyscan {{ host }}.fcd.dev | grep ecdsa-sha2-nistp256 >> {{ ansible_user_dir }}/.ssh/known_hosts
+      loop: [cpn, node]
+      loop_control:
+        loop_var: host
+      tags: redo
+
+- hosts: k8s
 
   tasks:
     - name: Download kubeadm, kubectl, kubelet
@@ -25,12 +35,12 @@
 
     - name: docker key
       apt_key:
-        url: https://download.docker.com/linux/debian/gpg
+        url: https://download.docker.com/linux/{{ ansible_distribution.lower() }}/gpg
       become: yes
 
     - name: docker repo
       apt_repository:
-        repo: deb [arch=amd64] https://download.docker.com/linux/debian buster stable
+        repo: deb [arch=amd64] https://download.docker.com/linux/{{ ansible_distribution.lower() }} {{ ansible_lsb.codename }} stable
       become: yes
 
     - name: docker install
@@ -52,10 +62,27 @@
 
     - name: apt upgrade
       apt:
-        upgrade: yes
+        upgrade: full
         update_cache: yes
       become: yes
-      when: ansible_os_family == "Debian"
+      when: ansible_os_family == 'Debian'
+
+    - name: check reboot needed
+      stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+      when: ansible_distribution == 'Ubuntu'
+
+    - name: reboot
+      reboot:
+      become: yes
+      register: reboot_stats
+      when: reboot_required.stat.exists
+
+    - name: reboot information
+      debug:
+        var: reboot_stats
+      when: reboot_required.stat.exists
 
     - name: reqs
       package:
@@ -63,6 +90,7 @@
           - conntrack
           - ethtool
           - fish
+          - iputils-ping
           - socat
           - tmux
           - vim
@@ -88,9 +116,9 @@
 
     - name: enable kubelet
       systemd:
-        daemon_reload: true
+        daemon_reload: yes
         name: kubelet
-        enabled: true
+        enabled: yes
       become: yes
 
     - name: user bin
@@ -103,7 +131,7 @@
         src: https://github.com/twpayne/chezmoi/releases/download/v1.8.5/chezmoi_1.8.5_linux_amd64.tar.gz
         dest: '{{ ansible_user_dir }}/bin'
         mode: 0755
-        remote_src: true
+        remote_src: yes
 
     - name: chezmoi init
       command: '{{ ansible_user_dir }}/bin/chezmoi init https://gitlab.com/femnad/chezmoi.git'
@@ -128,8 +156,25 @@
         state: stopped
       become: yes
 
-    - name: kubedm init
-      command: kubeadm init --log-file={{ ansible_user_dir }}/kubeadm.log
+  handlers:
+    - name: kubelet-restart
+      systemd:
+        name: kubelet
+        state: restarted
+        daemon_reload: yes
+      become: yes
+
+    - name: docker-restart
+      systemd:
+        name: docker
+        state: restarted
+      become: yes
+
+- hosts: cpn
+
+  tasks:
+    - name: kubeadm init
+      shell: kubeadm init > {{ ansible_user_dir }}/kubeadm.log
       become: yes
 
     - name: kube config dir
@@ -141,7 +186,7 @@
       copy:
         src: /etc/kubernetes/admin.conf
         dest: '{{ ansible_user_dir }}/.kube/config'
-        remote_src: true
+        remote_src: yes
       become: yes
 
     - name: calico config
@@ -152,17 +197,19 @@
     - name: install calico
       command: kubectl apply -f calico.yaml
 
-  handlers:
-    - name: kubelet-restart
-      systemd:
-        name: kubelet
-        state: restarted
-        daemon_reload: true
-      become: yes
+    - name: join token
+      shell: tail -n 2 {{ ansible_user_dir }}/kubeadm.log | tr -d '\n' | sed -e 's/\\\    //' -e 's/ $//'
+      register: join_cmd_out
 
-    - name: docker-restart
-      systemd:
-        name: docker
-        state: restarted
+    - name: token holder
+      add_host:
+        name: token_holder
+        join_cmd: '{{ join_cmd_out.stdout }}'
+
+- hosts: nod
+
+  tasks:
+    - name: kubeadm join
+      command: "{{ hostvars['token_holder']['join_cmd'] }}"
       become: yes
 ...
