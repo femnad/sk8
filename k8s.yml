@@ -56,18 +56,7 @@
           - fish
           - socat
           - tmux
-      become: yes
-
-    - name: defaults dir
-      file:
-        path: /etc/defaults
-        state: directory
-      become: yes
-
-    - name: kubelet defaults
-      copy:
-        src: kubelet-defaults
-        dest: /etc/default/kubelet
+          - vim
       become: yes
 
     - name: kubelet service
@@ -80,11 +69,13 @@
       file:
         path: /etc/systemd/system/kubelet.service.d/
         state: directory
+      become: yes
 
     - name: kubelet drop-in
       copy:
         src: kubeadm.conf
         dest: /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+      become: yes
 
     - name: enable kubelet
       systemd:
