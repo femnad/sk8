@@ -119,6 +119,30 @@
         state: stopped
       become: yes
 
+    - name: kubedm init
+      command: kubeadm init --log-file={{ ansible_user_dir }}/kubeadm.log
+      become: yes
+
+    - name: kube config dir
+      file:
+        path: '{{ ansible_user_dir }}/.kube'
+        state: directory
+
+    - name: kube config
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: '{{ ansible_user_dir }}/.kube/config'
+        remote_src: true
+      become: yes
+
+    - name: calico config
+      get_url:
+        url: https://docs.projectcalico.org/manifests/calico.yaml
+        dest: '{{ ansible_user_dir }}'
+
+    - name: install calico
+      command: kubectl apply -f calico.yaml
+
   handlers:
     - name: kubelet-restart
       systemd:
