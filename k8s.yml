@@ -48,6 +48,15 @@
       notify: docker-restart
       become: yes
 
+    - meta: flush_handlers
+
+    - name: apt upgrade
+      apt:
+        upgrade: yes
+        update_cache: yes
+      become: yes
+      when: ansible_os_family == "Debian"
+
     - name: reqs
       package:
         name:
