@@ -59,12 +59,12 @@ resource "google_compute_instance" "cpn" {
   }
 }
 
-resource "google_compute_instance" "node" {
+resource "google_compute_instance" "nod" {
   name                      = "k8s-nod"
   machine_type              = "e2-small"
   allow_stopping_for_update = true
 
-  tags = ["k8s-node"]
+  tags = ["k8s-nod"]
 
   metadata = {
     ssh-keys = join("\n", formatlist(local.ssh_format_spec, [for key in jsondecode(data.http.github.body) : key.key]))
@@ -87,10 +87,6 @@ resource "google_compute_instance" "node" {
   }
 }
 
-data "google_compute_instance" "cpn_data" {
-  name = google_compute_instance.cpn.name
-}
-
 resource "google_compute_firewall" "allow-private-from-cpn" {
   name    = "private-allower-cpn"
   network = google_compute_network.network.name
@@ -104,16 +100,12 @@ resource "google_compute_firewall" "allow-private-from-cpn" {
     ports    = ["1024-65535"]
   }
 
-  target_tags   = ["k8s-node"]
-  source_ranges = [data.google_compute_instance.cpn_data.network_interface[0].network_ip]
+  target_tags   = ["k8s-nod"]
+  source_ranges = [google_compute_instance.cpn.network_interface[0].network_ip]
 }
 
-data "google_compute_instance" "node_data" {
-  name = google_compute_instance.node.name
-}
-
-resource "google_compute_firewall" "allow-private-from-node" {
-  name    = "private-allower-node"
+resource "google_compute_firewall" "allow-private-from-nod" {
+  name    = "private-allower-nod"
   network = google_compute_network.network.name
 
   allow {
@@ -126,7 +118,7 @@ resource "google_compute_firewall" "allow-private-from-node" {
   }
 
   target_tags   = ["k8s-cpn"]
-  source_ranges = [data.google_compute_instance.node_data.network_interface[0].network_ip]
+  source_ranges = [google_compute_instance.nod.network_interface[0].network_ip]
 }
 
 module "dns-module-cpn" {
@@ -138,11 +130,11 @@ module "dns-module-cpn" {
   project          = "foolproj"
 }
 
-module "dns-module-node" {
+module "dns-module-nod" {
   source           = "femnad/dns-module/gcp"
   version          = "0.3.0"
-  dns_name         = "node.fcd.dev."
-  instance_ip_addr = google_compute_instance.node.network_interface[0].access_config[0].nat_ip
+  dns_name         = "nod.fcd.dev."
+  instance_ip_addr = google_compute_instance.nod.network_interface[0].access_config[0].nat_ip
   managed_zone     = "fcd-dev"
   project          = "foolproj"
 }
