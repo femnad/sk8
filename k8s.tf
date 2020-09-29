@@ -121,6 +121,18 @@ resource "google_compute_firewall" "allow-private-from-nod" {
   source_ranges = [google_compute_instance.nod.network_interface[0].network_ip]
 }
 
+resource "google_compute_firewall" "allow-api-access" {
+  name    = "k8s-api-allower"
+  network = google_compute_network.network.name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["6443"]
+  }
+  target_tags = ["k8s-cpn"]
+  source_ranges = [format("%s/32", jsondecode(data.http.ipinfo.body).ip)]
+}
+
 module "dns-module-cpn" {
   source           = "femnad/dns-module/gcp"
   version          = "0.3.0"

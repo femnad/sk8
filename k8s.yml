@@ -5,14 +5,14 @@
       known_hosts:
         name: '{{ host }}.fcd.dev'
         state: absent
-      loop: [cpn, node]
+      loop: [cpn, nod]
       loop_control:
         loop_var: host
       tags: redo
 
     - name: add known hosts
       shell: ssh-keyscan {{ host }}.fcd.dev | grep ecdsa-sha2-nistp256 >> {{ ansible_user_dir }}/.ssh/known_hosts
-      loop: [cpn, node]
+      loop: [cpn, nod]
       loop_control:
         loop_var: host
       tags: redo
@@ -212,4 +212,26 @@
     - name: kubeadm join
       command: "{{ hostvars['token_holder']['join_cmd'] }}"
       become: yes
+
+- hosts: cpn
+
+  tasks:
+    - name: local kubeconfig
+      file:
+        path: '{{ ansible_user_dir }}/.kube'
+        state: directory
+      delegate_to: localhost
+
+    - name: fetch kubeconfig
+      fetch:
+        flat: yes
+        src: '{{ ansible_user_dir }}/.kube/config'
+        dest: '{{ ansible_user_dir }}/.kube/config'
+
+    - name: change server
+      replace:
+        path: '{{ ansible_user_dir }}/.kube/config'
+        regexp: https://[0-9.]+:6443
+        replace: https://cpn.fcd.dev:6443
+      delegate_to: localhost
 ...
