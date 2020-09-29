@@ -110,6 +110,8 @@
           - ethtool
           - fish
           - iputils-ping
+          - ranger
+          - screen
           - socat
           - tmux
           - vim
