@@ -100,6 +100,12 @@ resource "google_compute_firewall" "allow-private-from-cpn" {
     ports    = ["1024-65535"]
   }
 
+  # BGP
+  allow {
+    protocol = "tcp"
+    ports    = ["179"]
+  }
+
   target_tags   = ["k8s-nod"]
   source_ranges = [google_compute_instance.cpn.network_interface[0].network_ip]
 }
@@ -115,6 +121,12 @@ resource "google_compute_firewall" "allow-private-from-nod" {
   allow {
     protocol = "tcp"
     ports    = ["1024-65535"]
+  }
+
+  # BGP
+  allow {
+    protocol = "tcp"
+    ports    = ["179"]
   }
 
   target_tags   = ["k8s-cpn"]

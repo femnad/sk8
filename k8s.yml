@@ -194,7 +194,7 @@
 - hosts: cpn
 
   tasks:
-    - name: kubeadm init
+    - name: kubeadm init --pod-network-cidr=192.168.0.0/16
       shell: kubeadm init > {{ ansible_user_dir }}/kubeadm.log
       become: yes
 
