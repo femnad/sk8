@@ -112,12 +112,15 @@
     - name: reqs
       package:
         name:
+          - cmake
           - conntrack
           - ethtool
           - fish
           - fzf
+          - g++
           - iputils-ping
           - jq
+          - python3-dev
           - ranger
           - screen
           - socat
@@ -172,6 +175,34 @@
 
     - name: chezmoi apply
       command: '{{ ansible_user_dir }}/bin/chezmoi apply'
+
+    - name: vim swap
+      file:
+        path: '{{ ansible_user_dir }}/.vim/swap'
+        state: directory
+
+    - name: vim plug dir
+      file:
+        path: '{{ ansible_user_dir }}/.vim/autoload/'
+        state: directory
+
+    - name: vim plug
+      get_url:
+        url: https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+        dest: '{{ ansible_user_dir }}/.vim/autoload/plug.vim'
+
+    - name: plug init
+      command: vim -c ":PlugInstall" -c ":quitall"
+
+    - name: ycm
+      command: git submodule update --init --recursive
+      args:
+        chdir: '{{ ansible_user_dir }}/.vim/plugged/YouCompleteMe'
+
+    - name: ycm setup
+      command: python3 ./install.py
+      args:
+        chdir: '{{ ansible_user_dir }}/.vim/plugged/YouCompleteMe'
 
     - name: purge config
       file:
