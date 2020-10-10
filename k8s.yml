@@ -2,12 +2,16 @@
 - hosts: localhost
   tasks:
     - name: cpn ip
-      shell: dig cpn.fcd.dev A +nocomments +noquestion +nocmd +nostats | awk '{print $NF}'
+      command: host cpn.fcd.dev
       register: cpn_ip
+      retries: 60
+      until: cpn_ip.rc == 0
 
     - name: nod ip
-      shell: dig nod.fcd.dev A +nocomments +noquestion +nocmd +nostats | awk '{print $NF}'
+      command: host nod.fcd.dev
       register: nod_ip
+      retries: 60
+      until: nod_ip.rc == 0
 
     # remove host keys for IPs of previous instances
     - name: remove known ips
@@ -15,7 +19,7 @@
         path: '{{ ansible_user_dir }}/.ssh/known_hosts'
         regexp: '^{{ ip }} .*'
         state: absent
-      loop: ['{{ cpn_ip.stdout }}', '{{ nod_ip.stdout }}']
+      loop: ['{{ cpn_ip.stdout.split()[-1] }}', '{{ nod_ip.stdout.split()[-1] }}']
       loop_control:
         loop_var: ip
       delegate_to: localhost
@@ -109,7 +113,9 @@
           - conntrack
           - ethtool
           - fish
+          - fzf
           - iputils-ping
+          - jq
           - ranger
           - screen
           - socat
@@ -208,6 +214,8 @@
         src: /etc/kubernetes/admin.conf
         dest: '{{ ansible_user_dir }}/.kube/config'
         remote_src: yes
+        owner: '{{ ansible_user }}'
+        group: '{{ ansible_user }}'
       become: yes
 
     - name: calico config
