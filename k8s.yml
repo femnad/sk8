@@ -216,8 +216,8 @@
         src: /etc/kubernetes/admin.conf
         dest: '{{ ansible_user_dir }}/.kube/config'
         remote_src: yes
-        owner: '{{ ansible_user }}'
-        group: '{{ ansible_user }}'
+        owner: '{{ ansible_user_id }}'
+        group: '{{ ansible_user_id }}'
       become: yes
 
     - name: calico config
