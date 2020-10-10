@@ -4,13 +4,15 @@
     - name: cpn ip
       command: host cpn.fcd.dev
       register: cpn_ip
-      retries: 60
+      retries: 10
+      delay: 60
       until: cpn_ip.rc == 0
 
     - name: nod ip
       command: host nod.fcd.dev
       register: nod_ip
-      retries: 60
+      retries: 10
+      delay: 60
       until: nod_ip.rc == 0
 
     # remove host keys for IPs of previous instances
